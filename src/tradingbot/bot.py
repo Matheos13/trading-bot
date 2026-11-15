@@ -8,6 +8,7 @@ extended paper trading.
 
 from __future__ import annotations
 
+import subprocess
 import time
 from datetime import datetime
 
@@ -16,6 +17,18 @@ from .config import Config
 from .data.feed import fetch_ohlcv
 from .risk.manager import RiskManager
 from .strategies.base import Signal, Strategy
+
+
+def _notify(title: str, body: str) -> None:
+    """Send a macOS desktop notification. Silent no-op on non-macOS."""
+    try:
+        subprocess.run(
+            ["osascript", "-e",
+             f'display notification "{body}" with title "{title}"'],
+            check=False, capture_output=True,
+        )
+    except FileNotFoundError:
+        pass
 
 
 class TradingBot:
@@ -27,14 +40,30 @@ class TradingBot:
         self.broker = PaperBroker(cash=config.starting_cash)
 
     def step(self, price: float, signal: Signal) -> None:
+        sym = self.config.symbol
         pos = self.broker.position
+
         if pos.is_open and self.risk.stop_hit(pos.entry_price, price):
             self.broker.sell(price, pos.qty)
+            if not self.broker.position.is_open:
+                eq = self.broker.equity(price)
+                _notify(f"[paper] STOP-LOSS — {sym}",
+                        f"Sold @ {price:,.2f}  |  equity {eq:,.2f}")
+
         if signal is Signal.BUY and not self.broker.position.is_open:
             qty = self.risk.position_size(self.broker.equity(price), price)
             self.broker.buy(price, qty)
+            if self.broker.position.is_open:
+                eq = self.broker.equity(price)
+                _notify(f"[paper] BUY — {sym}",
+                        f"Bought @ {price:,.2f}  |  equity {eq:,.2f}")
+
         elif signal is Signal.SELL and self.broker.position.is_open:
             self.broker.sell(price, self.broker.position.qty)
+            if not self.broker.position.is_open:
+                eq = self.broker.equity(price)
+                _notify(f"[paper] SELL — {sym}",
+                        f"Sold @ {price:,.2f}  |  equity {eq:,.2f}")
 
     def run_once(self) -> tuple[float, Signal]:
         """Pull the latest candles, feed the strategy, act once.

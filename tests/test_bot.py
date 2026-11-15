@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 from tradingbot.bot import TradingBot
 from tradingbot.config import Config
@@ -48,6 +48,43 @@ def test_step_hold_does_nothing_when_flat():
     bot.step(price=100.0, signal=Signal.HOLD)
     assert not bot.broker.position.is_open
     assert bot.broker.cash == 10_000.0
+
+
+# ── notifications ────────────────────────────────────────────────────────────
+
+def test_notify_called_on_buy():
+    bot = _bot()
+    with patch("tradingbot.bot._notify") as mock_notify:
+        bot.step(price=100.0, signal=Signal.BUY)
+    mock_notify.assert_called_once()
+    title, body = mock_notify.call_args[0]
+    assert "BUY" in title
+    assert "100" in body
+
+
+def test_notify_called_on_sell():
+    bot = _bot()
+    with patch("tradingbot.bot._notify") as mock_notify:
+        bot.step(price=100.0, signal=Signal.BUY)
+        bot.step(price=110.0, signal=Signal.SELL)
+    titles = [c[0][0] for c in mock_notify.call_args_list]
+    assert any("SELL" in t for t in titles)
+
+
+def test_notify_called_on_stop_loss():
+    bot = _bot()
+    with patch("tradingbot.bot._notify") as mock_notify:
+        bot.step(price=100.0, signal=Signal.BUY)
+        bot.step(price=96.0, signal=Signal.HOLD)
+    titles = [c[0][0] for c in mock_notify.call_args_list]
+    assert any("STOP" in t for t in titles)
+
+
+def test_notify_not_called_on_hold():
+    bot = _bot()
+    with patch("tradingbot.bot._notify") as mock_notify:
+        bot.step(price=100.0, signal=Signal.HOLD)
+    mock_notify.assert_not_called()
 
 
 # ── run_once() ───────────────────────────────────────────────────────────────
