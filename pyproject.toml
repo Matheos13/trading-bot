@@ -1,0 +1,25 @@
+[project]
+name = "trading-bot"
+version = "0.1.0"
+description = "A modular crypto trading bot: backtest and paper-trade strategies before risking a cent."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Matheos", email = "mathaiou.agency@gmail.com" }]
+
+dependencies = []
+
+[project.optional-dependencies]
+# Live data/trading needs ccxt. The backtester runs without it (synthetic data).
+live = ["ccxt>=4.0.0"]
+dev  = ["pytest>=8.0"]
+
+[project.scripts]
+tradingbot = "tradingbot.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tradingbot"]
