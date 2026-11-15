@@ -9,6 +9,7 @@ extended paper trading.
 from __future__ import annotations
 
 import subprocess
+import sys
 import time
 from datetime import datetime
 
@@ -87,13 +88,18 @@ class TradingBot:
             raise RuntimeError(
                 "Live mode is not implemented. Paper-trade and backtest first."
             )
+        sys.stdout.reconfigure(line_buffering=True)  # flush every line when piped
         print(
             f"[paper] starting  strategy={self.strategy.name}"
             f"  symbol={self.config.symbol}  poll={poll_seconds}s"
             f"  cash={self.config.starting_cash:,.2f}"
         )
         while True:
-            equity, signal = self.run_once()
-            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print(f"[paper] {ts}  signal={signal.value:<4}  equity={equity:,.2f}")
+            try:
+                equity, signal = self.run_once()
+                ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                print(f"[paper] {ts}  signal={signal.value:<4}  equity={equity:,.2f}")
+            except Exception as exc:
+                ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                print(f"[paper] {ts}  ERROR: {exc} — retrying next poll")
             time.sleep(poll_seconds)
