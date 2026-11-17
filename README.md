@@ -1,5 +1,7 @@
 # trading-bot
 
+[![CI](https://github.com/Matheos13/trading-bot/actions/workflows/tests.yml/badge.svg)](https://github.com/Matheos13/trading-bot/actions/workflows/tests.yml)
+
 A modular crypto trading bot — backtest strategies, sweep parameters, and paper-trade live before risking a cent.
 
 > ⚠️ Not financial advice. Trading is risky and most bots lose money. Live trading is intentionally not wired up until a strategy is proven.
@@ -31,10 +33,8 @@ tradingbot backtest --strategy rsi --live
 
 Example output:
 
-![Backtest output](docs/backtest.png)
-
 ```
-Strategy: sma_cross  |  Data: binance BTC/USDT 1h  |  Candles: 500
+Strategy: sma_cross  |  Data: synthetic data  |  Candles: 500
 Backtest results
   start equity : 10,000.00
   end equity   : 10,115.51
